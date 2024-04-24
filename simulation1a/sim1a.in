@@ -55,11 +55,6 @@ loadExamples peopleHabituation.ex
 loadExamples objectTest.ex 
 loadExamples peopleTest.ex 
 
-loadExamples objectPeopleHabituation.ex 
-loadExamples peopleObjectHabituation.ex 
-loadExamples objectPeopleTest.ex 
-loadExamples peopleObjectTest.ex 
-
 
 # set learning and display parameters
 setObj learningRate $learningRate
@@ -224,11 +219,6 @@ loadExamples peopleHabituation.ex
 loadExamples objectTest.ex 
 loadExamples peopleTest.ex 
 
-loadExamples objectPeopleHabituation.ex 
-loadExamples peopleObjectHabituation.ex 
-loadExamples objectPeopleTest.ex 
-loadExamples peopleObjectTest.ex 
-
 
 # set learning and display parameters
 setObj learningRate $learningRate
@@ -299,9 +289,9 @@ proc testNetwork {n train trainNum train2 trainNum2 test fname} {
 # define lists for looping
 set age [list $age $age $age $age]
 set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
-set condition [list Object]
-set habEvent [list objectHabituation]
-set testEvent [list objectTest]
+set condition [list People Object]
+set habEvent [list peopleHabituation objectHabituation]
+set testEvent [list peopleTest objectTest]
 set pretrainingEpochs [list 500]
 set habituationEpochs [list 4]
 
