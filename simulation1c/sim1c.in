@@ -1,0 +1,439 @@
+# Simulation addressing the concern that Simulation 1a doesn't model "fuzzy" objects or people
+# Author: Deon T. Benton
+
+############################
+############################
+##    MAIN SIMULATIONS    ##
+############################
+############################
+
+######################
+# UNMODIFIED STIMULI #
+######################
+proc unmodifiedSim {} {
+# name of network
+addNet unmodifiedSim -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_B 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_B 2 INPUT OUT_NOISE
+addGroup Motion_IN 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+# noise parameters
+noiseType Slot_A -range 0.1
+noiseType Slot_B -range 0.1
+noiseType Animate_Salient_Features_A -range 0.1
+noiseType Animate_Salient_Features_B -range 0.1
+noiseType Motion_IN -range 0.08
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Salient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Nonsalient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Salient_Features_B_OUT 2 OUTPUT
+addGroup Animate_Nonsalient_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion_IN Animate_Salient_Features_A Animate_Salient_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Salient_Features_A_OUT Animate_Salient_Features_B_OUT}
+elmanConnect hidden context
+
+connectGroups {Animate_Nonsalient_Features_A Animate_Nonsalient_Features_B} hidden -type nonSalientI
+connectGroups hidden {Animate_Nonsalient_Features_A_OUT Animate_Nonsalient_Features_B_OUT} hidden -type nonSalientO
+
+setLinkValues learningRate 0.000001 -type nonSalientI
+setLinkValues learningRate 0.000001 -type nonSalientO
+
+setLinkValues weightDecay 0.375 -type nonSalientI
+setLinkValues weightDecay 0.375 -type nonSalientO
+
+deleteGroups bias
+
+# training examples
+loadExamples pretrain_100.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+loadExamples objectHabituation.ex 
+loadExamples peopleHabituation.ex 
+loadExamples objectTest.ex 
+loadExamples peopleTest.ex 
+
+
+
+# set learning and display parameters
+setObj learningRate 0.06
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay .0001
+setObj pseudoExampleFreq 1
+
+
+#resetPlot 
+#plotRow 4 b 2 n Slot_A_OUT 6 b 2 n Slot_B_OUT 6 
+#plotRow 3 b 4 n Motion_OUT 8
+#plotRow 4 b 4 n hidden 4
+#plotRow 5 b 6 n context 4
+#plotRow 3 b 4 n Motion 8
+#plotRow 4 b 2 n Slot_A 6 b 2 n Slot_B 6
+#drawUnits
+#viewUnits
+
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+        doExample -set [getObj testingSet.name]
+        saveActivations $fname
+    }
+}
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+    for {set i 0} {$i < $n} {incr i} {
+        # 100-0
+		resetNet
+        useTrainingSet $train
+        train $trainNum
+        useTrainingSet $train2
+        train $trainNum2
+        useTestingSet $test
+        testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+    }
+}
+
+
+
+# define lists for looping
+set pretrainEvent [list pretrain_100 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list people object]
+set habEvent [list peopleHabituation objectHabituation]
+set testEvent [list peopleTest objectTest]
+set pretrainingEpochs [list 1500]
+set habituationEpochs [list 4]
+
+
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach cond $condition hEvent $habEvent tEvent $testEvent { 
+		set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
+		cd $workingdirectory
+    foreach pEpochs $pretrainingEpochs {
+        foreach hEpochs $habituationEpochs {
+            testNetwork 20 $pEvent $pEpochs $hEvent $hEpochs $tEvent $cond$pEpochs$hEpochs$pEvent.txt
+        }
+    }
+}
+}
+
+}
+
+####################
+# MODIFIED STIMULI #
+####################
+proc modifiedSim {} {
+# name of network
+addNet modifiedSim -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_B 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_B 2 INPUT OUT_NOISE
+addGroup Motion_IN 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+# noise parameters
+noiseType Slot_A -range 0.1
+noiseType Slot_B -range 0.1
+noiseType Animate_Salient_Features_A -range 0.1
+noiseType Animate_Salient_Features_B -range 0.1
+noiseType Motion_IN -range 0.08
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Salient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Nonsalient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Salient_Features_B_OUT 2 OUTPUT
+addGroup Animate_Nonsalient_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion_IN Animate_Salient_Features_A Animate_Salient_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Salient_Features_A_OUT Animate_Salient_Features_B_OUT}
+elmanConnect hidden context
+
+connectGroups {Animate_Nonsalient_Features_A Animate_Nonsalient_Features_B} hidden -type nonSalientI
+connectGroups hidden {Animate_Nonsalient_Features_A_OUT Animate_Nonsalient_Features_B_OUT} hidden -type nonSalientO
+
+setLinkValues learningRate 0.000001 -type nonSalientI
+setLinkValues learningRate 0.000001 -type nonSalientO
+
+setLinkValues weightDecay 0.375 -type nonSalientI
+setLinkValues weightDecay 0.375 -type nonSalientO
+
+deleteGroups bias
+
+# training examples
+loadExamples pretrain_100.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+loadExamples objectWithAnimateFeaturesHabituation.ex 
+loadExamples peopleWithInanimateFeaturesHabituation.ex 
+loadExamples objectWithAnimateFeaturesTest.ex 
+loadExamples peopleWithInanimateFeaturesTest.ex 
+
+
+
+# set learning and display parameters
+setObj learningRate 0.06
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay .0001
+setObj pseudoExampleFreq 1
+
+
+#resetPlot 
+#plotRow 4 b 2 n Slot_A_OUT 6 b 2 n Slot_B_OUT 6 
+#plotRow 3 b 4 n Motion_OUT 8
+#plotRow 4 b 4 n hidden 4
+#plotRow 5 b 6 n context 4
+#plotRow 3 b 4 n Motion 8
+#plotRow 4 b 2 n Slot_A 6 b 2 n Slot_B 6
+#drawUnits
+#viewUnits
+
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+        doExample -set [getObj testingSet.name]
+        saveActivations $fname
+    }
+}
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+    for {set i 0} {$i < $n} {incr i} {
+        # 100-0
+		resetNet
+        useTrainingSet $train
+        train $trainNum
+        useTrainingSet $train2
+        train $trainNum2
+        useTestingSet $test
+        testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+    }
+}
+
+
+
+# define lists for looping
+set pretrainEvent [list pretrain_100 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list objectWithAnimateFeatures peopleWithInanimateFeatures]
+set habEvent [list objectWithAnimateFeaturesHabituation peopleWithInanimateFeaturesHabituation]
+set testEvent [list objectWithAnimateFeaturesTest peopleWithInanimateFeaturesTest]
+set pretrainingEpochs [list 1500]
+set habituationEpochs [list 4]
+
+
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach cond $condition hEvent $habEvent tEvent $testEvent { 
+		set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
+		cd $workingdirectory
+    foreach pEpochs $pretrainingEpochs {
+        foreach hEpochs $habituationEpochs {
+            testNetwork 20 $pEvent $pEpochs $hEvent $hEpochs $tEvent $cond$pEpochs$hEpochs$pEvent.txt
+        }
+    }
+}
+}
+
+}
+
+####################################################################
+# UNCOMMENT THE CODE BELOW IF YOU WANT TO AUTOMATE THE SIMULATIONS #
+####################################################################
+#unmodifiedSim
+#modifiedSim
+
+
+
+#####################################################################
+# IF YOU WANT TO PLAY AROUND WITH THE MODEL AND NOT AUTOMATE THE ####
+# SIMULATIONS TYPE 'vanillaSim' IN THE LENS CONSOLE AFTER FIRING UP #
+# LENS.															 ####
+#####################################################################
+proc vanillaSim {} {
+# name of network
+addNet salientSim -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Salient_Features_B 2 INPUT OUT_NOISE
+addGroup Animate_Nonsalient_Features_B 2 INPUT OUT_NOISE
+addGroup Motion_IN 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+# noise parameters
+noiseType Slot_A -range 0.1
+noiseType Slot_B -range 0.1
+noiseType Animate_Salient_Features_A -range 0.1
+noiseType Animate_Salient_Features_B -range 0.1
+noiseType Animate_Nonsalient_Features_A -range 0.1
+noiseType Animate_Nonsalient_Features_B -range 0.1
+noiseType Motion_IN -range 0.08
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Salient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Nonsalient_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Salient_Features_B_OUT 2 OUTPUT
+addGroup Animate_Nonsalient_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion_IN Animate_Salient_Features_A Animate_Salient_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Salient_Features_A_OUT Animate_Salient_Features_B_OUT}
+elmanConnect hidden context
+
+connectGroups {Animate_Nonsalient_Features_A Animate_Nonsalient_Features_B} hidden -type nonSalientI
+connectGroups hidden {Animate_Nonsalient_Features_A_OUT Animate_Nonsalient_Features_B_OUT} hidden -type nonSalientO
+
+setLinkValues learningRate 0.000001 -type nonSalientI
+setLinkValues learningRate 0.000001 -type nonSalientO
+
+setLinkValues weightDecay 0.375 -type nonSalientI
+setLinkValues weightDecay 0.375 -type nonSalientO
+
+deleteGroups bias
+
+# training examples
+loadExamples pretrain_100.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+loadExamples objectHabituation.ex 
+loadExamples peopleHabituation.ex 
+loadExamples objectTest.ex 
+loadExamples peopleTest.ex 
+
+loadExamples objectWithAnimateFeaturesHabituation.ex 
+loadExamples peopleWithInanimateFeaturesHabituation.ex 
+loadExamples objectWithAnimateFeaturesTest.ex 
+loadExamples peopleWithInanimateFeaturesTest.ex 
+
+
+
+# set learning and display parameters
+setObj learningRate 0.5
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay .0001
+setObj pseudoExampleFreq 1
+
+
+
+resetPlot 
+plotRow 6 b 2 n Slot_A_OUT 8 b 2 n Slot_B_OUT 8 
+plotRow 2 b 4 n Animate_Salient_Features_A_OUT 2 b 8 n Animate_Salient_Features_B_OUT 2 
+plotRow 2 b 4 n Animate_Nonsalient_Features_A_OUT 2 b 8 n Animate_Nonsalient_Features_B_OUT 2  
+plotRow 3 b 6 n Motion_OUT 8
+plotRow 6 b 4 n hidden 4
+plotRow 6 b 6 n context 4
+plotRow 3 b 6 n Motion_IN 8
+plotRow 2 b 4 n Animate_Salient_Features_A 2 b 8 n Animate_Salient_Features_B 2 
+plotRow 2 b 4 n Animate_Nonsalient_Features_A 2 b 8 n Animate_Nonsalient_Features_B 2  
+plotRow 4 b 2 n Slot_A 8 b 2 n Slot_B 8
+drawUnits
+viewUnits
+
+
+}

@@ -1,0 +1,412 @@
+# Simulations of Saxe, Tenenbaum, & Carey (2005)
+# Author: Deon T. Benton
+
+
+#########################
+#########################
+##    EXPERIMENT 1     ##
+#########################
+#########################
+proc exp1Sim {} {
+proc netSim {netName learningRate weightDecay learningRates wgtDecay} {
+# name of network
+addNet $netName -i 6
+
+# input groups 
+addGroup Left_Slot 40 INPUT OUT_NOISE
+addGroup Right_Slot 40 INPUT OUT_NOISE
+addGroup Left_Motion 35 INPUT OUT_NOISE
+addGroup Right_Motion 35 INPUT OUT_NOISE
+addGroup Animate_Features_Left 3 INPUT OUT_NOISE
+addGroup Animate_Features_Right 3 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU 
+
+# noise parameters
+noiseType Left_Slot -range 0.1
+noiseType Right_Slot -range 0.1
+noiseType Left_Motion -range 0.1
+noiseType Right_Motion -range 0.1
+noiseType Animate_Features_Left -range 0.1
+noiseType Animate_Features_Right -range 0.1
+
+# output group
+addGroup Left_Slot_OUT 40 OUTPUT 
+addGroup Right_Slot_OUT 40 OUTPUT 
+addGroup Left_Motion_OUT 35 OUTPUT
+addGroup Right_Motion_OUT 35 OUTPUT
+addGroup Animate_Features_Left_OUT 3 OUTPUT
+addGroup Animate_Features_Right_OUT 3 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Left_Slot Left_Motion Right_Slot Right_Motion Animate_Features_Left Animate_Features_Right context} hidden {Left_Slot_OUT Left_Motion_OUT Right_Slot_OUT Right_Motion_OUT Animate_Features_Left_OUT Animate_Features_Right_OUT}
+elmanConnect hidden context
+
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+loadExamples habituation_exp1.ex 
+loadExamples test_exp1_people.ex
+loadExamples test_exp1_object.ex
+
+
+# set learning and display parameters
+setObj learningRate $learningRate
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay $weightDecay
+setObj pseudoExampleFreq 1
+
+
+
+
+#resetPlot 
+#plotRow 4 b 2 n Left_Slot_OUT 4 b 10 n Right_Slot_OUT 4 
+#plotRow 6 b 2 n Left_Motion_OUT 7 b 5 n Right_Motion_OUT 7
+#plotRow 4 b 6 n hidden 6
+#plotRow 5 b 8 n context 6
+#plotRow 4 b 2 n Left_Slot 4 b 10 n Right_Slot 4 
+#plotRow 6 b 2 n Left_Motion 7 b 5 n Right_Motion 7
+#drawUnits
+#viewUnits
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+	doExample -set [getObj testingSet.name]
+	saveActivations $fname
+    }
+}
+
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+	for {set i 0} {$i < $n} {incr i} {
+		resetNet
+			useTrainingSet $train
+			train $trainNum
+			useTrainingSet $train2
+			train $trainNum2
+			useTestingSet $test
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+				
+	}
+}
+
+
+
+# define lists for looping
+set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list hand train]
+set conditionFile [list test_exp1_people test_exp1_object]
+set pretrainingEpochs [list 1500]
+set habituationEpochs [list 4]
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach cond $condition condFile $conditionFile {
+	set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
+	cd $workingdirectory
+	foreach pEpochs $pretrainingEpochs {
+		foreach hEpochs $habituationEpochs {
+		testNetwork 20 $pEvent $pEpochs habituation_exp1 $hEpochs $condFile $learningRates$condFile$cond$pEpochs$hEpochs$wgtDecay$pEvent.txt
+		}
+	}
+}
+}
+
+}
+
+# define list for looping over networks
+set learningRates [list 0.06]
+set wgtDecay [list 0.0001]
+
+
+# define loop
+foreach lr $learningRates {
+	foreach wDecay $wgtDecay {
+		netSim netExp1$lr$wDecay $lr $wDecay $lr $wDecay 
+	}
+}
+}
+
+#########################
+#########################
+##    EXPERIMENT 2     ##
+#########################
+#########################
+proc exp2Sim {} {
+proc netSim {netName learningRate weightDecay learningRates wgtDecay} {
+# name of network
+addNet $netName -i 6
+
+# input groups 
+addGroup Left_Slot 40 INPUT OUT_NOISE
+addGroup Right_Slot 40 INPUT OUT_NOISE
+addGroup Left_Motion 35 INPUT OUT_NOISE
+addGroup Right_Motion 35 INPUT OUT_NOISE
+addGroup Animate_Features_Left 3 INPUT OUT_NOISE
+addGroup Animate_Features_Right 3 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU 
+
+# noise parameters
+noiseType Left_Slot -range 0.1
+noiseType Right_Slot -range 0.1
+noiseType Left_Motion -range 0.1
+noiseType Right_Motion -range 0.1
+noiseType Animate_Features_Left -range 0.1
+noiseType Animate_Features_Right -range 0.1
+
+# output group
+addGroup Left_Slot_OUT 40 OUTPUT 
+addGroup Right_Slot_OUT 40 OUTPUT 
+addGroup Left_Motion_OUT 35 OUTPUT
+addGroup Right_Motion_OUT 35 OUTPUT
+addGroup Animate_Features_Left_OUT 3 OUTPUT
+addGroup Animate_Features_Right_OUT 3 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Left_Slot Left_Motion Right_Slot Right_Motion Animate_Features_Left Animate_Features_Right context} hidden {Left_Slot_OUT Left_Motion_OUT Right_Slot_OUT Right_Motion_OUT Animate_Features_Left_OUT Animate_Features_Right_OUT}
+elmanConnect hidden context
+
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE 
+
+loadExamples habituation_exp2.ex 
+loadExamples test_exp2.ex
+
+
+# set learning and display parameters
+setObj learningRate $learningRate
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay $weightDecay
+setObj pseudoExampleFreq 1
+
+
+
+
+#resetPlot 
+#plotRow 4 b 2 n Left_Slot_OUT 4 b 10 n Right_Slot_OUT 4 
+#plotRow 6 b 2 n Left_Motion_OUT 7 b 5 n Right_Motion_OUT 7
+#plotRow 4 b 6 n hidden 6
+#plotRow 5 b 8 n context 6
+#plotRow 4 b 2 n Left_Slot 4 b 10 n Right_Slot 4 
+#plotRow 6 b 2 n Left_Motion 7 b 5 n Right_Motion 7
+#drawUnits
+#viewUnits
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+	doExample -set [getObj testingSet.name]
+	saveActivations $fname
+    }
+}
+
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+	for {set i 0} {$i < $n} {incr i} {
+		resetNet
+			useTrainingSet $train
+			train $trainNum
+			useTrainingSet $train2
+			train $trainNum2
+			useTestingSet $test
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+			testAllFinalActs $fname
+				
+	}
+}
+
+set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED2"
+cd $workingdirectory
+
+# define lists for looping
+set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list puppet]
+set conditionFile [list test_exp2]
+set pretrainingEpochs [list 1500]
+set habituationEpochs [list 4]
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach cond $condition condFile $conditionFile {
+	foreach pEpochs $pretrainingEpochs {
+		foreach hEpochs $habituationEpochs {
+		testNetwork 20 $pEvent $pEpochs habituation_exp2 $hEpochs $condFile $learningRates$condFile$cond$pEpochs$hEpochs$wgtDecay$pEvent.txt
+		}
+	}
+}
+}
+
+}
+
+# define list for looping over networks
+set learningRates [list 0.06]
+set wgtDecay [list 0.0001]
+
+
+# define loop
+foreach lr $learningRates {
+	foreach wDecay $wgtDecay {
+		netSim netExp2$lr$wDecay $lr $wDecay $lr $wDecay 
+	}
+}
+}
+
+
+####################################################################
+# UNCOMMENT THE CODE BELOW IF YOU WANT TO AUTOMATE THE SIMULATIONS #
+####################################################################
+#exp1Sim		
+#exp2Sim
+		
+
+#####################################################################
+# IF YOU WANT TO PLAY AROUND WITH THE MODEL AND NOT AUTOMATE THE ####
+# SIMULATIONS TYPE 'vanillaSim' IN THE LENS CONSOLE AFTER FIRING UP #
+# LENS.															 ####
+#####################################################################
+
+proc vanillaSim {} {
+# name of network
+addNet netName -i 6
+
+# input groups 
+addGroup Left_Slot 40 INPUT OUT_NOISE
+addGroup Right_Slot 40 INPUT OUT_NOISE
+addGroup Left_Motion 35 INPUT OUT_NOISE
+addGroup Right_Motion 35 INPUT OUT_NOISE
+addGroup Animate_Features_Left 3 INPUT OUT_NOISE
+addGroup Animate_Features_Right 3 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU 
+
+# noise parameters
+noiseType Left_Slot -range 0.1
+noiseType Right_Slot -range 0.1
+noiseType Left_Motion -range 0.1
+noiseType Right_Motion -range 0.1
+noiseType Animate_Features_Left -range 0.1
+noiseType Animate_Features_Right -range 0.1
+
+# output group
+addGroup Left_Slot_OUT 40 OUTPUT 
+addGroup Right_Slot_OUT 40 OUTPUT 
+addGroup Left_Motion_OUT 35 OUTPUT
+addGroup Right_Motion_OUT 35 OUTPUT
+addGroup Animate_Features_Left_OUT 3 OUTPUT
+addGroup Animate_Features_Right_OUT 3 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Left_Slot Left_Motion Right_Slot Right_Motion Animate_Features_Left Animate_Features_Right context} hidden {Left_Slot_OUT Left_Motion_OUT Right_Slot_OUT Right_Motion_OUT Animate_Features_Left_OUT Animate_Features_Right_OUT}
+elmanConnect hidden context
+
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+loadExamples habituation_exp1.ex
+loadExamples test_exp1_people.ex
+loadExamples test_exp1_object.ex
+
+
+# set learning and display parameters
+setObj learningRate 0.1
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay 0.0001
+
+
+
+
+resetPlot 
+plotRow 10 b 2 n Left_Slot_OUT 10 b 10 n Right_Slot_OUT 10 
+plotRow 6 b 2 n Left_Motion_OUT 7 b 5 n Right_Motion_OUT 7
+plotRow 3 b 5 n Animate_Features_Left_OUT 1 b 4 n Animate_Features_Right_OUT 1
+plotRow 8 b 6 n hidden 6
+plotRow 9 b 8 n context 6
+plotRow 3 b 5 n Animate_Features_Left_OUT 1 b 4 n Animate_Features_Right_OUT 1
+plotRow 10 b 2 n Left_Slot 10 b 10 n Right_Slot 10 
+plotRow 6 b 2 n Left_Motion 7 b 5 n Right_Motion 7
+drawUnits
+viewUnits
+}

@@ -1,0 +1,489 @@
+# Simulations of Spelke, Phillips, & Woodward (1995)
+# Author: Deon T. Benton
+
+#########################
+#########################
+##    SIMULATIONS 1    ##
+#########################
+#########################
+proc sim7s {} {
+proc netSim {netName age learningRate weightDecay learningRates wgtDecay} {
+# name of network
+addNet $netName -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Features_B 2 INPUT OUT_NOISE
+addGroup Motion 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+# noise parameters
+noiseType Slot_A -range 0.1
+noiseType Slot_B -range 0.1
+noiseType Animate_Features_A -range 0.1
+noiseType Animate_Features_B -range 0.1
+noiseType Motion -range 0.08
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion Animate_Features_A Animate_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Features_A_OUT Animate_Features_B_OUT}
+elmanConnect hidden context
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+loadExamples objectHabituation.ex 
+loadExamples peopleHabituation.ex 
+loadExamples objectTest.ex 
+loadExamples peopleTest.ex 
+
+loadExamples objectPeopleHabituation.ex 
+loadExamples peopleObjectHabituation.ex 
+loadExamples objectPeopleTest.ex 
+loadExamples peopleObjectTest.ex 
+
+
+# set learning and display parameters
+setObj learningRate $learningRate
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay $weightDecay
+setObj pseudoExampleFreq 1
+
+
+
+#resetPlot 
+#plotRow 4 b 2 n Slot_A_OUT 6 b 2 n Slot_B_OUT 6 
+#plotRow 3 b 4 n Motion_OUT 8
+#plotRow 4 b 4 n hidden 4
+#plotRow 5 b 6 n context 4
+#plotRow 3 b 4 n Motion 8
+#plotRow 4 b 2 n Slot_A 6 b 2 n Slot_B 6
+#drawUnits
+#viewUnits
+
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+        doExample -set [getObj testingSet.name]
+        saveActivations $fname
+    }
+}
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+    for {set i 0} {$i < $n} {incr i} {
+        # 100-0
+		resetNet
+        useTrainingSet $train
+        train $trainNum
+        useTrainingSet $train2
+        train $trainNum2
+        useTestingSet $test
+        testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+    }
+}
+
+
+
+# define lists for looping
+set age [list $age $age $age $age]
+set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list Object People]
+set habEvent [list objectHabituation peopleHabituation]
+set testEvent [list objectTest peopleTest]
+set pretrainingEpochs [list 1500]
+set habituationEpochs [list 4]
+
+
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach a $age cond $condition hEvent $habEvent tEvent $testEvent { 
+		set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
+		cd $workingdirectory
+    foreach pEpochs $pretrainingEpochs {
+        foreach hEpochs $habituationEpochs {
+            testNetwork 20 $pEvent $pEpochs $hEvent $hEpochs $tEvent $a$cond$pEpochs$hEpochs$learningRates$wgtDecay$pEvent.txt
+        }
+    }
+}
+}
+
+}
+
+
+# define list for looping over networks
+set learningRates [list 0.06]
+set wgtDecay [list 0.0001]
+
+
+# define loop
+foreach lr $learningRates {
+	foreach wDecay $wgtDecay {
+		netSim net7s$lr$wDecay 7mos $lr $wDecay $lr $wDecay 
+	}
+}
+}
+
+
+
+#########################
+#########################
+##    SIMULATIONS 2    ##
+#########################
+#########################
+
+proc sim4s {} {
+proc netSim {netName age learningRate weightDecay learningRates wgtDecay} {
+# name of network
+addNet $netName -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Features_B 2 INPUT OUT_NOISE
+addGroup Motion 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 10 ELMAN
+addGroup hidden 10 RELU
+
+# noise parameters
+noiseType Slot_A -range 1
+noiseType Slot_B -range 0.1
+noiseType Animate_Features_A -range 1
+noiseType Animate_Features_B -range 1
+noiseType Motion -range 1
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Features_A_OUT 2 OUTPUT
+addGroup Animate_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion Animate_Features_A Animate_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Features_A_OUT Animate_Features_B_OUT}
+elmanConnect hidden context
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+loadExamples objectHabituation.ex 
+loadExamples peopleHabituation.ex 
+loadExamples objectTest.ex 
+loadExamples peopleTest.ex 
+
+loadExamples objectPeopleHabituation.ex 
+loadExamples peopleObjectHabituation.ex 
+loadExamples objectPeopleTest.ex 
+loadExamples peopleObjectTest.ex 
+
+
+# set learning and display parameters
+setObj learningRate $learningRate
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay $weightDecay
+setObj pseudoExampleFreq 1
+
+
+
+#resetPlot 
+#plotRow 4 b 2 n Slot_A_OUT 6 b 2 n Slot_B_OUT 6 
+#plotRow 3 b 4 n Motion_OUT 8
+#plotRow 4 b 4 n hidden 4
+#plotRow 5 b 6 n context 4
+#plotRow 3 b 4 n Motion 8
+#plotRow 4 b 2 n Slot_A 6 b 2 n Slot_B 6
+#drawUnits
+#viewUnits
+
+
+
+proc saveActivations {fname} { 
+    set outfile [open $fname a] 
+    puts $outfile "[getObj currentExample.num] [getObj currentExample.name] " nonewline 
+    puts $outfile [getObj exampleError]
+    close $outfile 
+}
+
+proc testAllFinalActs {fname} { 
+    resetExampleSet [getObj testingSet.name] 
+    set nex [getObj testingSet.numExamples] 
+    for {set i 0} {$i < $nex} {incr i} {
+        doExample -set [getObj testingSet.name]
+        saveActivations $fname
+    }
+}
+
+proc testNetwork {n train trainNum train2 trainNum2 test fname} {
+    for {set i 0} {$i < $n} {incr i} {
+        # 100-0
+		resetNet
+        useTrainingSet $train
+        train $trainNum
+        useTrainingSet $train2
+        train $trainNum2
+        useTestingSet $test
+        testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+		testAllFinalActs $fname
+    }
+}
+
+
+
+# define lists for looping
+set age [list $age $age $age $age]
+set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]
+set condition [list Object]
+set habEvent [list objectHabituation]
+set testEvent [list objectTest]
+set pretrainingEpochs [list 500]
+set habituationEpochs [list 4]
+
+
+
+# define loop
+foreach pEvent $pretrainEvent {
+foreach a $age cond $condition hEvent $habEvent tEvent $testEvent { 
+		set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
+		cd $workingdirectory
+    foreach pEpochs $pretrainingEpochs {
+        foreach hEpochs $habituationEpochs {
+            testNetwork 20 $pEvent $pEpochs $hEvent $hEpochs $tEvent $a$cond$pEpochs$hEpochs$learningRates$wgtDecay$pEvent.txt
+        }
+    }
+}
+}
+
+}
+
+# define list for looping over networks
+set learningRates [list 0.02]
+set wgtDecay [list 0.001]
+
+
+# define loop
+foreach lr $learningRates {
+	foreach wDecay $wgtDecay {
+	netSim net4s$lr$wDecay 4mos $lr $wDecay $lr $wDecay
+	}
+}
+}
+
+####################################################################
+# UNCOMMENT THE CODE BELOW IF YOU WANT TO AUTOMATE THE SIMULATIONS #
+####################################################################
+#sim7s
+#sim4s
+
+#####################################################################
+# IF YOU WANT TO PLAY AROUND WITH THE MODEL AND NOT AUTOMATE THE ####
+# SIMULATIONS TYPE 'vanillaSim' IN THE LENS CONSOLE AFTER FIRING UP #
+# LENS.															 ####
+#####################################################################
+proc vanillaSim {} {
+# name of network
+addNet netName -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT OUT_NOISE
+addGroup Slot_B 40 INPUT OUT_NOISE
+addGroup Animate_Features_A 2 INPUT OUT_NOISE
+addGroup Animate_Features_B 2 INPUT OUT_NOISE
+addGroup Motion_IN 8 INPUT OUT_NOISE
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+# noise parameters
+noiseType Slot_A -range 0.1
+noiseType Slot_B -range 0.1
+noiseType Animate_Features_A -range 0.1
+noiseType Animate_Features_B -range 0.1
+noiseType Motion_IN -range 0.08
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion_IN Animate_Features_A Animate_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Features_A_OUT Animate_Features_B_OUT}
+elmanConnect hidden context
+
+# training examples
+loadExamples pretrain_100_0.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_90_10.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_80_20.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_70_30.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_60_40.ex -exmode ORD -mode REPLACE
+loadExamples pretrain_50_50.ex -exmode ORD -mode REPLACE
+
+
+
+loadExamples objectHabituation.ex 
+loadExamples peopleHabituation.ex 
+loadExamples objectTest.ex 
+loadExamples peopleTest.ex 
+
+loadExamples objectPeopleHabituation.ex 
+loadExamples peopleObjectHabituation.ex 
+loadExamples objectPeopleTest.ex 
+loadExamples peopleObjectTest.ex 
+
+
+# set learning and display parameters
+setObj learningRate 0.1
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay 0.0001
+
+
+
+resetPlot 
+plotRow 5 b 2 n Slot_A_OUT 10 b 2 n Slot_B_OUT 10 
+plotRow 2 b 6 n Animate_Features_A_OUT 2 b 10 n Animate_Features_B_OUT 2
+plotRow 2 b 9 n Motion_OUT 8
+plotRow 3 b 6 n hidden 10
+plotRow 3 b 8 n context 10
+plotRow 2 b 9 n Motion_IN 8
+plotRow 2 b 6 n Animate_Features_A 2 b 10 n Animate_Features_B 2
+plotRow 5 b 2 n Slot_A 10 b 2 n Slot_B 10
+drawUnits
+viewUnits
+}
+
+
+proc modelFigureVanillaSim {} {
+seed 2023
+# name of network
+addNet netName -i 8
+
+# input groups
+addGroup Slot_A 40 INPUT 
+addGroup Slot_B 40 INPUT 
+addGroup Animate_Features_A 2 INPUT 
+addGroup Animate_Features_B 2 INPUT 
+addGroup Motion_IN 8 INPUT 
+
+# hidden group (# there are necessarily fewer hidden units than there are input and output units)
+# context group
+addGroup context 20 ELMAN
+addGroup hidden 20 RELU
+
+
+# output group
+addGroup Slot_A_OUT 40 OUTPUT
+addGroup Slot_B_OUT 40 OUTPUT
+addGroup Animate_Features_A_OUT 2 OUTPUT 
+addGroup Animate_Features_B_OUT 2 OUTPUT
+addGroup Motion_OUT 8 OUTPUT
+
+# connect groups (input -> hidden -> output)
+connectGroups {Slot_A Slot_B Motion_IN Animate_Features_A Animate_Features_B context} hidden {Slot_A_OUT Slot_B_OUT Motion_OUT Animate_Features_A_OUT Animate_Features_B_OUT}
+elmanConnect hidden context
+
+# training examples
+loadExamples pretrain_100_0_model_figure.ex 
+
+
+
+# set learning and display parameters
+setObj learningRate 0.1
+setObj momentum	    0.9
+setObj batchSize    0
+setObj numUpdates   10
+setObj reportInterval 1
+setObj unitCellSize 20
+setObj linkCellSize 10
+setObj randRange 0.1
+setObj weightDecay 0.0001
+
+
+
+resetPlot 
+plotRow 5 b 2 n Slot_A_OUT 10 b 2 n Slot_B_OUT 10 
+plotRow 2 b 6 n Animate_Features_A_OUT 2 b 10 n Animate_Features_B_OUT 2
+plotRow 2 b 9 n Motion_OUT 8
+plotRow 3 b 6 n hidden 10
+plotRow 3 b 8 n context 10
+plotRow 2 b 9 n Motion_IN 8
+plotRow 2 b 6 n Animate_Features_A 2 b 10 n Animate_Features_B 2
+plotRow 5 b 2 n Slot_A 10 b 2 n Slot_B 10
+drawUnits
+viewUnits
+}
