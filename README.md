@@ -9,7 +9,7 @@ This repository contains the modeling files and network data for the simulations
 - <code>Simulation 3</code>:  Simulations of Saxe, Tzelnic, & Carey (2007).
 - <code>Simulation 4</code>: Simulations of Markson & Spelke (2006).
 
-## Code
+## Contact
 
 Please direct any questions, comments, or concerns to Deon T. Benton (<a href="deon.benton@vanderbilt.edu">deon.benton@vanderbilt.edu</a>).
 
