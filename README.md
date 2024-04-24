@@ -7,7 +7,7 @@ This repository contains the modeling files and network data for the simulations
 - <code>Simulation 1c</code>: Simulation addressing a potential objection that Simulation 1a doesn't model "fuzzy" objects or people.
 - <code>Simulation 2</code>:  Simulations of Saxe, Tenenbaum, & Carey (2005).
 - <code>Simulation 3</code>:  Simulations of Saxe, Tzelnic, & Carey (2007).
-- <code>Simulation 4</code>: Simulations of Markson & Spelke (2006)
+- <code>Simulation 4</code>: Simulations of Markson & Spelke (2006).
 
 ## Code
 
