@@ -319,7 +319,7 @@ set habituationEpochs [list 4]
 # define loop
 foreach pEvent $pretrainEvent {
 foreach cond $condition hEvent $habEvent tEvent $testEvent { 
-		set workingdirectory "C:/Users/bentod2/Documents/projects/current/spelkeSaxeSimulationsNEW/postMS/final/JEPGeneral/revision2/simulations/spelkePhillipsWoodward1995/SRN/3Contact3NoContactTestEvents/Data/$cond"
+		set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
 		cd $workingdirectory
     foreach pEpochs $pretrainingEpochs {
         foreach hEpochs $habituationEpochs {
@@ -328,7 +328,6 @@ foreach cond $condition hEvent $habEvent tEvent $testEvent {
     }
 }
 }
-
 }
 
 
