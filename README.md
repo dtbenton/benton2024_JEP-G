@@ -2,7 +2,7 @@
 This repository contains the modeling files and network data for the simulations reported in Benton (2024, JEPG).
 
 ## Overview of the Repository
-- <code>Simulation 1a</code>: Simulation of Spelke, Phillips, & Woodward (1995) with an extension to "younger" models.
+- <code>Simulation 1a</code>: Simulation of Spelke, Phillips, & Woodward (1995) with an extension to "younger" models (corresponding to infants younger than 7 months of age).
 - <code>Simulation 1b</code>: Simulation addressing a potential objection that an AL mechanism cannot discover causally relevant features.
 - <code>Simulation 1c</code>: Simulation addressing a potential objection that Simulation 1a doesn't model "fuzzy" objects or people.
 - <code>Simulation 2</code>:  Simulations of Saxe, Tenenbaum, & Carey (2005).
