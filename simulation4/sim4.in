@@ -131,7 +131,7 @@ proc testNetwork {n train trainNum train2 trainNum2 test fname} {
 	}
 }
 
-
+# note: testAllFinalActs is being repeated 10x to control for the fact that noisy activations.
 
 # define lists for looping
 set pretrainEvent [list pretrain_100_0 pretrain_90_10 pretrain_80_20 pretrain_70_30 pretrain_60_40 pretrain_50_50]

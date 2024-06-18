@@ -124,6 +124,8 @@ proc testNetwork {n train trainNum train2 trainNum2 test fname} {
 	}
 }
 
+# note: testAllFinalActs is being repeated 10x to control for the fact that noisy activations.
+
 set workingdirectory "REPLACE THIS WITH THE PATH TO WHERE YOUR DATA IS STORED"
 cd $workingdirectory
 

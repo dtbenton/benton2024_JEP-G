@@ -138,6 +138,7 @@ proc testNetwork {n train trainNum train2 trainNum2 test fname} {
     }
 }
 
+# note: testAllFinalActs is being repeated 10x to control for the fact that noisy activations.
 
 
 # define lists for looping
