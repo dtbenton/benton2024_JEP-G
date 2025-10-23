@@ -390,7 +390,7 @@ setObj momentum	    0.9
 setObj batchSize    0
 setObj numUpdates   10
 setObj reportInterval 1
-setObj unitCellSize 20
+setObj unitCellSize 14
 setObj linkCellSize 10
 setObj randRange 0.1
 setObj weightDecay 0.0001
@@ -399,14 +399,14 @@ setObj weightDecay 0.0001
 
 
 resetPlot 
-plotRow 10 b 2 n Left_Slot_OUT 10 b 10 n Right_Slot_OUT 10 
-plotRow 6 b 2 n Left_Motion_OUT 7 b 5 n Right_Motion_OUT 7
-plotRow 3 b 5 n Animate_Features_Left_OUT 1 b 4 n Animate_Features_Right_OUT 1
-plotRow 8 b 6 n hidden 6
-plotRow 9 b 8 n context 6
-plotRow 3 b 5 n Animate_Features_Left_OUT 1 b 4 n Animate_Features_Right_OUT 1
-plotRow 10 b 2 n Left_Slot 10 b 10 n Right_Slot 10 
-plotRow 6 b 2 n Left_Motion 7 b 5 n Right_Motion 7
+plotRow 5 b 2 n Left_Slot_OUT 10 b 15 n Right_Slot_OUT 10 
+plotRow 6 b 2 n Left_Motion_OUT 7 b 20 n Right_Motion_OUT 7
+plotRow 4 b 5 n Animate_Features_Left_OUT 2 b 26 n Animate_Features_Right_OUT 2
+plotRow 6 b 15 n hidden 6
+plotRow 6 b 17 n context 6
+plotRow 4 b 5 n Animate_Features_Left 2 b 26 n Animate_Features_Right 2
+plotRow 5 b 2 n Left_Slot 10 b 15 n Right_Slot 10 
+plotRow 5 b 2 n Left_Motion 7 b 20 n Right_Motion 7
 drawUnits
 viewUnits
 }
